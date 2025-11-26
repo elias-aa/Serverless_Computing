@@ -1,8 +1,21 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
+try:
+    import plotly.express as px
+    import plotly.graph_objects as go
+except Exception as e:
+    # Provide a friendly message in Streamlit to help debugging in deployment
+    st.error(
+        """
+        The app failed to import Plotly. If you're deploying this app, ensure `plotly` is
+        included in your `requirements.txt` and that the environment has been rebuilt.
+        For example, add `plotly>=5.10.0` to `requirements.txt` and re-deploy.
+        """
+    )
+    # Re-raise the exception after providing a helpful Streamlit message so the logs
+    # still contain the original error for debugging.
+    raise
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_absolute_error
@@ -100,11 +113,11 @@ with col3:
 with col4:
     st.metric("Avg Cost/Function", f"${filtered_data['CostUSD'].mean():,.2f}")
 
-st.dataframe(filtered_data.head(10), use_container_width=True)
+st.dataframe(filtered_data.head(10), width='stretch')
 
 with st.expander("📋 Full Dataset Info & Summary Statistics"):
     st.write("**Summary Statistics:**")
-    st.dataframe(filtered_data.describe(), use_container_width=True)
+    st.dataframe(filtered_data.describe(), width='stretch')
     st.write("**Missing values per column:**")
     st.write(filtered_data.isna().sum())
 
@@ -135,7 +148,7 @@ with col1:
     display_df = top_80_percent[['FunctionName', 'Environment', 'CostUSD', 'CumulativePercent']].copy()
     display_df['CostUSD'] = display_df['CostUSD'].apply(lambda x: f"${x:,.2f}")
     display_df['CumulativePercent'] = display_df['CumulativePercent'].apply(lambda x: f"{x:.1f}%")
-    st.dataframe(display_df, use_container_width=True, hide_index=True)
+    st.dataframe(display_df, width='stretch', hide_index=True)
 
 with col2:
     # Pareto chart
@@ -170,7 +183,7 @@ with col2:
         showlegend=True,
         legend=dict(x=0.7, y=1.1, orientation='h')
     )
-    st.plotly_chart(fig_pareto, use_container_width=True)
+    st.plotly_chart(fig_pareto, width='stretch')
 
 # Cost vs Invocation Frequency
 st.subheader("📈 Cost vs Invocation Frequency")
@@ -186,7 +199,7 @@ fig_scatter = px.scatter(
     log_x=True
 )
 fig_scatter.update_layout(height=500)
-st.plotly_chart(fig_scatter, use_container_width=True)
+st.plotly_chart(fig_scatter, width='stretch')
 
 st.markdown("---")
 
@@ -226,7 +239,7 @@ with col1:
         display_df = over_provisioned[display_cols].copy()
         display_df['CostUSD'] = display_df['CostUSD'].apply(lambda x: f"${x:,.2f}")
         display_df['PotentialSavings'] = display_df['PotentialSavings'].apply(lambda x: f"${x:,.2f}")
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        st.dataframe(display_df, width='stretch', hide_index=True)
     else:
         st.info("No over-provisioned functions found with current thresholds.")
 
@@ -260,7 +273,7 @@ with col2:
     )
     
     fig_memory.update_layout(height=500)
-    st.plotly_chart(fig_memory, use_container_width=True)
+    st.plotly_chart(fig_memory, width='stretch')
 
 st.markdown("---")
 
@@ -297,7 +310,7 @@ with col1:
         
         display_cols = ['FunctionName', 'ProvisionedConcurrency', 'ColdStartRate', 'CostUSD', 'Recommendation']
         st.dataframe(pc_functions[display_cols].sort_values('ProvisionedConcurrency', ascending=False), 
-                     use_container_width=True, hide_index=True)
+                 width='stretch', hide_index=True)
         
         # Summary
         remove_count = len(pc_functions[pc_functions['Recommendation'] == '🔴 Consider Removing'])
@@ -330,7 +343,7 @@ with col2:
                               text="Optimization Zone", showarrow=False, font=dict(color="red"))
         
         fig_pc.update_layout(height=450)
-        st.plotly_chart(fig_pc, use_container_width=True)
+        st.plotly_chart(fig_pc, width='stretch')
     else:
         st.info("No functions with provisioned concurrency in the filtered data.")
 
@@ -378,7 +391,7 @@ with col1:
         display_df['InvocationPercent'] = display_df['InvocationPercent'].apply(lambda x: f"{x:.3f}%")
         display_df['CostPercent'] = display_df['CostPercent'].apply(lambda x: f"{x:.2f}%")
         display_df['CostUSD'] = display_df['CostUSD'].apply(lambda x: f"${x:,.2f}")
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        st.dataframe(display_df, width='stretch', hide_index=True)
     else:
         st.success("✅ No low-value workloads detected with current thresholds.")
 
@@ -417,7 +430,7 @@ with col2:
     )
     
     fig_value.update_layout(height=500)
-    st.plotly_chart(fig_value, use_container_width=True)
+    st.plotly_chart(fig_value, width='stretch')
 
 st.markdown("---")
 
@@ -478,7 +491,7 @@ with col1:
         color='Coefficient',
         color_continuous_scale='RdBu'
     )
-    st.plotly_chart(fig_coef, use_container_width=True)
+    st.plotly_chart(fig_coef, width='stretch')
 
 with col2:
     # Actual vs Predicted
@@ -511,7 +524,7 @@ with col2:
     ))
     
     fig_pred.update_layout(height=450)
-    st.plotly_chart(fig_pred, use_container_width=True)
+    st.plotly_chart(fig_pred, width='stretch')
 
 # Cost Calculator
 st.subheader("🧮 Cost Prediction Calculator")
@@ -585,7 +598,7 @@ with col1:
         display_df['AvgDurationMs'] = display_df['AvgDurationMs'].apply(lambda x: f"{x:,.0f}ms ({x/1000:.1f}s)")
         display_df['CostUSD'] = display_df['CostUSD'].apply(lambda x: f"${x:,.2f}")
         display_df['ContainerScore'] = display_df['ContainerScore'].apply(lambda x: f"{x:.2f}")
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        st.dataframe(display_df, width='stretch', hide_index=True)
 
 with col2:
     # Visualization
@@ -609,7 +622,7 @@ with col2:
                             annotation_text=f"Low invocation threshold")
     
     fig_container.update_layout(height=500)
-    st.plotly_chart(fig_container, use_container_width=True)
+    st.plotly_chart(fig_container, width='stretch')
 
 # Show specific long-running workloads
 st.subheader("⏱️ Long-Running ETL/Batch Workloads (>15 seconds)")
@@ -620,7 +633,7 @@ if len(long_running) > 0:
     display_df['Duration (sec)'] = display_df['AvgDurationMs'] / 1000
     display_df['CostUSD'] = display_df['CostUSD'].apply(lambda x: f"${x:,.2f}")
     st.dataframe(display_df[['FunctionName', 'Environment', 'Duration (sec)', 'MemoryMB', 'GBSeconds', 'CostUSD']], 
-                 use_container_width=True, hide_index=True)
+                 width='stretch', hide_index=True)
     st.warning("⚡ These long-running functions are prime candidates for migration to containers (ECS/Fargate/Cloud Run).")
 else:
     st.info("No long-running workloads (>15s) found in the filtered data.")
@@ -669,7 +682,7 @@ with col2:
         title='Cost by Environment',
         color_discrete_sequence=px.colors.qualitative.Set2
     )
-    st.plotly_chart(fig_env, use_container_width=True)
+    st.plotly_chart(fig_env, width='stretch')
 
 with col3:
     st.subheader("🎯 Key Actions")
